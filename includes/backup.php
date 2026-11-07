@@ -31,6 +31,31 @@ function backup_create(PDO $pdo, string $root): array
     $archive = $dir.DIRECTORY_SEPARATOR.'backup.zip';
     try {
         // VACUUM INTO produces a transactional snapshot, including committed WAL data.
+        $sqliteVersion = (string) $pdo->query('select sqlite_version()')->fetchColumn();
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite') {
+            throw new RuntimeException('Резервное копирование поддерживает только SQLite.');
+        }
+        if (version_compare($sqliteVersion, '3.27.0', '>=')) {
+            // VACUUM INTO produces a transactional snapshot, including committed WAL data.
+            $quotedPath = $pdo->quote($dbCopy);
+            if ($quotedPath === false) throw new RuntimeException('Не удалось подготовить путь к копии базы.');
+            $pdo->exec('VACUUM main INTO '.$quotedPath);
+        } elseif (class_exists('SQLite3') && method_exists('SQLite3', 'backup')) {
+            // SQLite's Online Backup API works with older SQLite libraries and creates a consistent snapshot.
+            $source = new SQLite3($root.'/includes/database.sqlite', SQLITE3_OPEN_READONLY);
+            $source->enableExceptions(true);
+            $destination = new SQLite3($dbCopy, SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
+            $destination->enableExceptions(true);
+            try {
+                if (!$source->backup($destination)) throw new RuntimeException('SQLite не смог создать снимок базы.');
+            } finally {
+                $destination->close();
+                $source->close();
+            }
+        } else {
+            throw new RuntimeException('Для резервного копирования нужен SQLite 3.27.0+ или включённое расширение SQLite3 с Online Backup API.');
+        }
+        if (!is_file($dbCopy) || !@chmod($dbCopy, 0600)) throw new RuntimeException('Не удалось защитить копию базы.');
         if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite' || version_compare((string) $pdo->query('select sqlite_version()')->fetchColumn(), '3.27.0', '<')) {
             throw new RuntimeException('Для резервного копирования требуется SQLite версии 3.27.0 или новее.');
         }
