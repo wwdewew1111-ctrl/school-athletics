@@ -1,5 +1,6 @@
 <?php
 /** Education migration runner with step-by-step logs. */
+if (php_sapi_name() !== 'cli') { http_response_code(403); exit('Forbidden'); }
 $root = __DIR__;
 $php = getenv('PHP_BINARY') ?: 'php';
 $script = $root.'\migrate_education.php';

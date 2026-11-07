@@ -1,13 +1,20 @@
-# Local runtime data and uploaded content may contain private information.
-/uploads/
+# Runtime files and user data must never be committed.
+/uploads/*
+!/uploads/.htaccess
+/includes/database.sqlite*
 *.sqlite
 *.sqlite-*
 *.db
 *.db-*
 *.log
 *.pid
+*.zip
+*.tar
+*.tar.gz
+*.bak
 .env
 .env.*
 *.pem
 *.key
 school-athletics-social-settings.json
+!/includes/.htaccess

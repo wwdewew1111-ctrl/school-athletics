@@ -1,0 +1,2 @@
+# Apache 2.4: protect internal application files, including SQLite sidecars.
+Require all denied

@@ -1,0 +1,7 @@
+# Apache 2.4 rules. Nginx must enforce equivalent rules before serving files.
+Options -Indexes
+RewriteEngine On
+RewriteRule (^|/)\.git(?:/|$) - [F,L,NC]
+<FilesMatch "(?i)(?:^\.|\.(?:sqlite(?:[-.].*)?|db(?:[-.].*)?|log|sh|md|zip|bak|tar|gz|pem|key|ini|conf|dist|sql|swp)(?:$|\.))">
+    Require all denied
+</FilesMatch>

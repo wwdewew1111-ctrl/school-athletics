@@ -33,7 +33,7 @@ if (isset($_GET['logout'])) {
 }
 
 // Generated once with password_hash(..., PASSWORD_DEFAULT); never store the plaintext password here.
-const ADMIN_PASSWORD_HASH = '$2y$12$8YIVDGbR0yC4huhwShwtneR9SJwfoGjfyaUWc8niBBlkTgsB8/.je';
+const ADMIN_PASSWORD_HASH = '$2y$12$m.vxNzXvpZA54G4vE0U5c.wbWAhkUhkX4wrZUQY7P0XiGixmiuXpq';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login') {
     if (hash_equals($csrf, (string) ($_POST['csrf'] ?? ''))
@@ -59,6 +59,27 @@ if ($logged && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '')
             throw new RuntimeException('Сессия формы истекла. Обновите страницу.');
         }
         $action = (string) ($_POST['action'] ?? '');
+        if ($action === 'download_backup') {
+            require_once __DIR__.'/../includes/backup.php';
+            session_write_close();
+            ignore_user_abort(true);
+            $backup = backup_create($pdo, dirname(__DIR__));
+            $handle = @fopen($backup['archive'], 'rb');
+            if ($handle === false) throw new RuntimeException('Не удалось открыть резервную копию.');
+            $size = filesize($backup['archive']);
+            if ($size === false) { fclose($handle); throw new RuntimeException('Не удалось определить размер резервной копии.'); }
+            while (ob_get_level() > 0) ob_end_clean();
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="school-athletics-backup-'.date('Y-m-d_H-i-s').'.zip"');
+            header('Content-Length: '.$size);
+            header('Cache-Control: no-store, no-cache, must-revalidate, private');
+            header('Pragma: no-cache');
+            header('X-Content-Type-Options: nosniff');
+            fpassthru($handle);
+            fclose($handle);
+            backup_cleanup($backup['directory']);
+            exit;
+        }
         $id = (int) ($_POST['id'] ?? 0);
         $upload = static function (array $file, string $folder, array $extensions) use (&$newFiles, $pdo): string {
             $path = upload_file($file, $folder, $extensions);
@@ -284,7 +305,12 @@ if ($logged && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '')
         foreach ($newFiles as $path) {
             @unlink(str_starts_with($path, 'uploads/news/') ? news_image_file($path) : dirname(__DIR__).'/'.$path);
         }
-        $error = $ex instanceof RuntimeException ? $ex->getMessage() : 'Не удалось сохранить изменения.';
+        if ($logged && $ex instanceof PDOException) {
+            error_log('Admin database error: '.$ex->getMessage());
+            $error = 'Ошибка базы данных. Проверьте журнал сервера.';
+        } else {
+            $error = $ex instanceof RuntimeException ? $ex->getMessage() : 'Не удалось сохранить изменения.';
+        }
     }
 }
 
@@ -350,6 +376,13 @@ function adminDelete(string $table, int $id, string $tab, string $csrf): void
 <?php else: ?>
 <header class="border-b border-white/10 bg-black"><div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-5"><div><a href="../index.php" class="text-sm text-red-400">← На сайт</a><h1 class="mt-1 text-2xl font-black">Управление сайтом</h1></div><a href="?logout=1" class="rounded-lg border border-white/20 px-4 py-2 text-sm">Выйти</a></div></header>
 <main class="mx-auto max-w-7xl px-4 py-8">
+<form method="post" class="mb-5">
+    <input type="hidden" name="csrf" value="<?=h($csrf)?>">
+    <input type="hidden" name="action" value="download_backup">
+    <input type="hidden" name="tab" value="<?=h($tab)?>">
+    <button type="submit" class="rounded-lg border border-white/20 px-4 py-2 text-sm font-bold">Скачать резервную копию</button>
+    <p class="mt-2 text-sm text-gray-400">Архив содержит базу, загрузки и настройки соцсетей. Храните его в защищённом месте.</p>
+</form>
 <?php if ($error): ?><div class="mb-5 rounded-xl bg-red-950 p-4 text-red-200"><?=h($error)?></div><?php elseif ($notice): ?><div class="mb-5 rounded-xl bg-green-950 p-4 text-green-200"><?=h($notice)?></div><?php endif; ?>
 <nav class="mb-8 flex flex-wrap gap-2"><?php foreach ($tabs as $key => $label): ?><a class="rounded-lg px-4 py-2 <?=$tab === $key ? 'bg-red-600' : 'bg-neutral-800 hover:bg-neutral-700'?>" href="?tab=<?=h($key)?>"><?=h($label)?></a><?php endforeach; ?></nav>
 <?php if ($tab === 'news'): define('ADMIN_PAGE_ACTIVE', true); require __DIR__.'/news-form.php'; else: ?>

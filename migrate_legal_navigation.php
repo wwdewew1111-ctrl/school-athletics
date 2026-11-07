@@ -1,7 +1,7 @@
 <?php
 /** One-time migration: create missing empty sections without modifying existing records. */
 declare(strict_types=1);
-if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+if (php_sapi_name() !== 'cli') { http_response_code(403); exit('Forbidden'); }
 require_once __DIR__.'/includes/db.php';
 $navigation = require __DIR__.'/includes/legal_navigation.php';
 $pdo = db();

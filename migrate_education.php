@@ -1,6 +1,7 @@
 <?php
 /** Education migration: database update, PDF import, and verification. */
 declare(strict_types=1);
+if (php_sapi_name() !== 'cli') { http_response_code(403); exit('Forbidden'); }
 require_once __DIR__.'/includes/db.php';
 require_once __DIR__.'/includes/upload_names.php';
 

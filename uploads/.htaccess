@@ -1,0 +1,5 @@
+# Do not serve or execute scripts from user-controlled uploads.
+Options -Indexes -ExecCGI -MultiViews
+<FilesMatch "(?i)\.(?:php[0-9]*|phtml|pht|phar|phps|phpt|shtml|cgi|pl|py|rb)(?:[./]|$)">
+    Require all denied
+</FilesMatch>
