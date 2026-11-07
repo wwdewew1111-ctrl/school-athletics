@@ -23,7 +23,7 @@ $currentPage = basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'index.php'));
     <div class="site-container">
         <div class="site-header-row">
             <a href="index.php" class="site-brand">
-                <span class="brand-mark">С4</span>
+                <img class="brand-mark" src="assets/logo.jpg" width="425" height="600" alt="">
                 <span class="brand-name">МБУ ДО «СШОР № 4»<small>по легкой атлетике · Владимир</small></span>
             </a>
             <button id="menuBtn" class="menu-toggle" type="button" aria-label="Открыть меню" aria-controls="mobileNav" aria-expanded="false"><span aria-hidden="true">☰</span></button>
