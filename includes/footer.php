@@ -2,8 +2,8 @@
 <footer class="site-footer">
     <div class="site-container footer-grid">
         <div><a href="index.php" class="footer-title">МБУ ДО «СШОР № 4»</a><p>Спорт — норма жизни</p><p><?=h(ORG_ADDRESS)?></p></div>
-        <div><h2>Контакты</h2><p><a href="tel:+74922545389"><?=h(ORG_PHONE)?></a></p><p>Пн–Пт: 8:30–20:00; Сб: 16:00–20:00</p></div>
-        <div><h2>Полезные разделы</h2><nav aria-label="Полезные разделы"><a href="legal.php?section=admission">Прием в школу</a><a href="legal.php?section=anticorruption">Противодействие коррупции</a><a href="legal.php?section=appeals">Обращения граждан</a><a href="legal.php?section=information-security">Информационная безопасность</a><a href="legal.php">Сведения об образовательной организации</a></nav></div>
+        <div><h2>Контакты</h2><p><a href="tel:+74922545389"><?=h(ORG_PHONE)?></a></p><p>Пн–Пт: 09:00–18:00</p></div>
+        <div><h2>Полезные разделы</h2><nav aria-label="Полезные разделы"><a href="legal.php?section=admission">Прием в школу</a><a href="legal.php?section=anticorruption">Противодействие коррупции</a><a href="legal.php?section=appeals">Обращения граждан</a><a href="/sveden/common">Сведения об образовательной организации</a></nav></div>
     </div>
     <div class="footer-bottom">© <?=date('Y')?> МБУ ДО «СШОР № 4 по легкой атлетике»</div>
 </footer>

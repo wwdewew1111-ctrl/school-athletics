@@ -1,14 +1,16 @@
 <?php
 require_once __DIR__.'/db.php';
 $pageTitle = $pageTitle ?? ORG_NAME;
-$nav = [['Главная','index.php'],['Соревнования','competitions.php'],['Расписание','schedule.php'],['Тренеры','coaches.php'],['Фотоальбом','gallery.php'],['Сведения школы','legal.php']];
+$nav = [['Главная','index.php'],['Соревнования','competitions.php'],['Расписание','schedule.php'],['Тренеры','coaches.php'],['Фотоальбом','gallery.php'],['Сведения школы','/sveden/common']];
 $themeUrl = 'theme.css?v='.(string) filemtime(__DIR__.'/../theme.css');
 $currentPage = basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'index.php'));
+if (isset($route) && $route !== null) $currentPage = 'legal.php';
 ?><!doctype html>
 <html lang="ru">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <?php if (!empty($publicBasePath)): ?><base href="<?=h($publicBasePath)?>"><?php endif; ?>
     <meta name="theme-color" content="#a51a1a">
     <title><?=h($pageTitle)?> — СШОР № 4</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,14 +30,14 @@ $currentPage = basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'index.php'));
             </a>
             <button id="menuBtn" class="menu-toggle" type="button" aria-label="Открыть меню" aria-controls="mobileNav" aria-expanded="false"><span aria-hidden="true">☰</span></button>
             <nav id="nav" class="desktop-nav" aria-label="Основная навигация">
-                <?php foreach ($nav as [$label, $url]): $active = $currentPage === $url || ($url === 'index.php' && $currentPage === ''); ?>
+                <?php foreach ($nav as [$label, $url]): $active = $currentPage === $url || ($url === 'index.php' && $currentPage === '') || ($url === '/sveden/common' && $currentPage === 'legal.php'); ?>
                 <a href="<?=h($url)?>"<?=$active ? ' aria-current="page"' : ''?>><?=h($label)?></a>
                 <?php endforeach; ?>
             </nav>
             <a href="admin/index.php" class="admin-link">Админ</a>
         </div>
         <nav id="mobileNav" class="mobile-nav" aria-label="Мобильная навигация" hidden>
-            <?php foreach ($nav as [$label, $url]): $active = $currentPage === $url || ($url === 'index.php' && $currentPage === ''); ?>
+            <?php foreach ($nav as [$label, $url]): $active = $currentPage === $url || ($url === 'index.php' && $currentPage === '') || ($url === '/sveden/common' && $currentPage === 'legal.php'); ?>
             <a href="<?=h($url)?>"<?=$active ? ' aria-current="page"' : ''?>><?=h($label)?></a>
             <?php endforeach; ?>
             <a href="admin/index.php">Админ-панель</a>

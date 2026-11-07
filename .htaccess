@@ -2,7 +2,9 @@
 Options -Indexes
 RewriteEngine On
 RewriteRule (^|/)\.git(?:/|$) - [F,L,NC]
-RewriteRule ^migrate_.*\.php$ - [F,L,NC]
+RewriteRule ^(?:migrate_.*|router)\.php$ - [F,L,NC]
+RewriteRule ^sveden/?$ legal.php [L,QSA]
+RewriteRule ^sveden/([A-Za-z0-9_]+)/?$ legal.php [L,QSA]
 <FilesMatch "(?i)(?:^\.|\.(?:sqlite(?:[-.].*)?|db(?:[-.].*)?|log|sh|md|zip|bak|tar|gz|pem|key|ini|conf|dist|sql|swp)(?:$|\.))">
     Require all denied
 </FilesMatch>
