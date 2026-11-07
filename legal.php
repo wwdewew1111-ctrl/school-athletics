@@ -19,7 +19,10 @@ foreach ($sections as $r) {
     if ($r['slug'] === $slug) $current = $r;
     if ($r['slug'] === 'education-program') $educationProgram = $r;
 }
-if (!$current) $current = $sections[0] ?? ['slug' => '', 'title' => 'Сведения', 'content' => '', 'document' => ''];
+if (!$current) {
+    http_response_code(404);
+    $current = ['slug' => '', 'title' => 'Раздел не найден', 'content' => '<p>Запрошенный раздел не найден.</p>', 'document' => ''];
+}
 if (isset($navigationTitles[$current['slug']])) $current['title'] = $navigationTitles[$current['slug']];
 $content = (string) $current['content'];
 if ($current['slug'] === 'facilities' && isset($sectionsBySlug['accessibility'])) {
