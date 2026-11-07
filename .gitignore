@@ -1,0 +1,13 @@
+# Local runtime data and uploaded content may contain private information.
+/uploads/
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.log
+*.pid
+.env
+.env.*
+*.pem
+*.key
+school-athletics-social-settings.json
