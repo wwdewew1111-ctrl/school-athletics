@@ -30,7 +30,6 @@ function backup_create(PDO $pdo, string $root): array
     $dbCopy = $dir.DIRECTORY_SEPARATOR.'database.sqlite';
     $archive = $dir.DIRECTORY_SEPARATOR.'backup.zip';
     try {
-        // VACUUM INTO produces a transactional snapshot, including committed WAL data.
         $sqliteVersion = (string) $pdo->query('select sqlite_version()')->fetchColumn();
         if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite') {
             throw new RuntimeException('Резервное копирование поддерживает только SQLite.');
@@ -55,13 +54,6 @@ function backup_create(PDO $pdo, string $root): array
         } else {
             throw new RuntimeException('Для резервного копирования нужен SQLite 3.27.0+ или включённое расширение SQLite3 с Online Backup API.');
         }
-        if (!is_file($dbCopy) || !@chmod($dbCopy, 0600)) throw new RuntimeException('Не удалось защитить копию базы.');
-        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite' || version_compare((string) $pdo->query('select sqlite_version()')->fetchColumn(), '3.27.0', '<')) {
-            throw new RuntimeException('Для резервного копирования требуется SQLite версии 3.27.0 или новее.');
-        }
-        $quotedPath = $pdo->quote($dbCopy);
-        if ($quotedPath === false) throw new RuntimeException('Не удалось подготовить путь к копии базы.');
-        $pdo->exec('VACUUM main INTO '.$quotedPath);
         if (!is_file($dbCopy) || !@chmod($dbCopy, 0600)) throw new RuntimeException('Не удалось защитить копию базы.');
         $zip = new ZipArchive();
         if ($zip->open($archive, ZipArchive::CREATE | ZipArchive::EXCL) !== true) throw new RuntimeException('Не удалось создать ZIP-архив.');
