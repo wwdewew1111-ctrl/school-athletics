@@ -207,3 +207,28 @@ body > .site-header { position: relative; }
     .vision-bw .vision-controls button[aria-pressed="true"],
     .vision-controls button[aria-pressed="true"] { border: 2px solid ButtonText !important; }
 }
+/* Targeted contrast fixes for the existing public and admin markup. */
+#main .prose-school article[itemprop="structOrgUprav"] {
+    background: #f2eeee;
+    color: #20242b;
+}
+#main .prose-school article[itemprop="structOrgUprav"] dt,
+#main .prose-school article[itemprop="structOrgUprav"] dd,
+#main .prose-school article[itemprop="structOrgUprav"] p {
+    color: #343b45;
+}
+#main .prose-school article[itemprop="structOrgUprav"] a {
+    color: #8f1717;
+}
+
+body.admin-page > header,
+body.admin-page > header h1,
+body.admin-page > header a {
+    color: #f8fafc;
+}
+body.admin-page > header a.text-red-400 {
+    color: #fca5a5;
+}
+body.admin-page > header a:hover {
+    color: #ffffff;
+}

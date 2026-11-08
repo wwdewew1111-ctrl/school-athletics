@@ -358,7 +358,7 @@ function adminDelete(string $table, int $id, string $tab, string $csrf): void
     <style>body{background:#0f0f0f;color:#f5f5f5;font-family:system-ui,sans-serif}.field{width:100%;border:1px solid #333;border-radius:.5rem;background:#0b0b0b;padding:.65rem;color:white}label{font-size:.85rem;color:#d1d5db}.card{background:#1a1a1a;border:1px solid #2b2b2b;border-radius:1rem;padding:1.25rem}</style>
     <link rel="stylesheet" href="../theme.css?v=<?=h((string) filemtime(__DIR__.'/../theme.css'))?>">
 </head>
-<body>
+<body class="admin-page">
 <?php if (!$logged): ?>
 <main class="grid min-h-screen place-items-center p-4">
     <form method="post" class="w-full max-w-md rounded-2xl border border-white/10 bg-neutral-900 p-8">
