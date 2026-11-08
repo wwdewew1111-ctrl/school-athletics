@@ -5,11 +5,11 @@ require_once __DIR__.'/includes/db.php';
 require_once __DIR__.'/includes/upload_names.php';
 
 $path = (string) ($_GET['path'] ?? '');
-if (!preg_match('~^uploads/docs/[A-Za-z0-9_-]+\.(pdf|doc|docx|xlsx)$~iD', $path)) {
+if (!preg_match('~^uploads/(?:docs|admission)/[A-Za-z0-9_-]+\.(pdf|doc|docx|xlsx)$~iD', $path)) {
     http_response_code(404);
     exit('Not found');
 }
-$root = realpath(__DIR__.'/uploads/docs');
+$root = realpath(__DIR__.'/'.dirname($path));
 $file = realpath(__DIR__.'/'.$path);
 if ($root === false || $file === false || dirname($file) !== $root || !is_file($file)) {
     http_response_code(404);
