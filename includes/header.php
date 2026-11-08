@@ -17,7 +17,7 @@ if (isset($route) && $route !== null) $currentPage = 'legal.php';
     <script>tailwind.config={theme:{extend:{colors:{sport:'#b91c1c',ink:'#20242b',panel:'#fff'}}}}</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="<?=h($themeUrl)?>">
-    <script>(()=>{try{const s=localStorage.getItem('vision-size');if(['16','19','22'].includes(s))document.documentElement.style.fontSize=s+'px';const c=localStorage.getItem('vision-color');if(['bw','wb'].includes(c))document.documentElement.classList.add('vision-'+c)}catch(e){}})();</script>
+    <script>(()=>{try{const s=localStorage.getItem('vision-size');if(['16','19','22'].includes(s))document.documentElement.style.fontSize=(Number(s)/16*100)+'%';const c=localStorage.getItem('vision-color');if(['bw','wb','yellow'].includes(c))document.documentElement.classList.add('vision-'+c)}catch(e){}})();</script>
 </head>
 <body>
 <a class="skip-link" href="#main">Перейти к содержанию</a>
@@ -42,25 +42,43 @@ if (isset($route) && $route !== null) $currentPage = 'legal.php';
             <?php endforeach; ?>
             <a href="admin/index.php">Админ-панель</a>
         </nav>
-        <div class="vision-controls" aria-label="Настройки отображения">
+        <div class="vision-controls" role="group" aria-label="Настройки отображения">
             <span>Версия для слабовидящих:</span>
-            <button class="vision-size" type="button" data-size="16" aria-label="Обычный размер шрифта">А</button>
-            <button class="vision-size" type="button" data-size="19" aria-label="Увеличить шрифт">А+</button>
-            <button class="vision-size" type="button" data-size="22" aria-label="Максимальный размер шрифта">А++</button>
+            <div class="vision-group" role="group" aria-label="Размер шрифта">
+                <button class="vision-size" type="button" data-size="16" aria-label="Обычный размер шрифта" aria-pressed="true">А</button>
+                <button class="vision-size" type="button" data-size="19" aria-label="Увеличенный размер шрифта" aria-pressed="false">А+</button>
+                <button class="vision-size" type="button" data-size="22" aria-label="Максимальный размер шрифта" aria-pressed="false">А++</button>
+            </div>
             <span class="vision-divider" aria-hidden="true"></span>
-            <button class="vision-color" type="button" data-color="">Обычный</button>
-            <button class="vision-color" type="button" data-color="bw">Ч/Б</button>
-            <button class="vision-color" type="button" data-color="wb">Б/Ч</button>
+            <div class="vision-group" role="group" aria-label="Цветовая схема">
+                <button class="vision-color" type="button" data-color="" aria-label="Обычная цветовая схема" aria-pressed="true">Обычный</button>
+                <button class="vision-color" type="button" data-color="bw" aria-label="Чёрный текст на белом фоне" aria-pressed="false">Ч/Б</button>
+                <button class="vision-color" type="button" data-color="wb" aria-label="Белый текст на чёрном фоне" aria-pressed="false">Б/Ч</button>
+                <button class="vision-color" type="button" data-color="yellow" aria-label="Жёлтый текст на чёрном фоне" aria-pressed="false">Ж/Ч</button>
+            </div>
+            <button class="vision-reset" type="button">Сбросить настройки</button>
         </div>
     </div>
 </header>
-<main id="main" class="min-h-[65vh]">
+<main id="main" class="min-h-[65vh]" tabindex="-1">
 <script>
 (()=>{
     const menu=document.getElementById('menuBtn'), nav=document.getElementById('mobileNav');
+    const sizes=[...document.querySelectorAll('.vision-size')], colors=[...document.querySelectorAll('.vision-color')];
+    const setPressed=(buttons,attribute,value)=>buttons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset[attribute]===value)));
+    let size='16', color='';
+    try {
+        const savedSize=localStorage.getItem('vision-size'), savedColor=localStorage.getItem('vision-color');
+        if(['16','19','22'].includes(savedSize)) size=savedSize;
+        if(['bw','wb','yellow'].includes(savedColor)) color=savedColor;
+    } catch(e) {}
+    setPressed(sizes,'size',size); setPressed(colors,'color',color);
     menu.addEventListener('click',()=>{const open=nav.hidden;nav.hidden=!open;menu.setAttribute('aria-expanded',String(open));menu.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню')});
-    document.querySelectorAll('.vision-size').forEach(b=>b.onclick=()=>{document.documentElement.style.fontSize=b.dataset.size+'px';try{localStorage.setItem('vision-size',b.dataset.size)}catch(e){}});
-    document.querySelectorAll('.vision-color').forEach(b=>b.onclick=()=>{document.documentElement.classList.remove('vision-bw','vision-wb');if(b.dataset.color)document.documentElement.classList.add('vision-'+b.dataset.color);try{localStorage.setItem('vision-color',b.dataset.color)}catch(e){}});
+    menu.addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){nav.hidden=true;menu.setAttribute('aria-expanded','false');menu.setAttribute('aria-label','Открыть меню')}});
+    nav.addEventListener('keydown',e=>{if(e.key==='Escape'){nav.hidden=true;menu.setAttribute('aria-expanded','false');menu.setAttribute('aria-label','Открыть меню');menu.focus()}});
+    sizes.forEach(b=>b.addEventListener('click',()=>{document.documentElement.style.fontSize=(Number(b.dataset.size)/16*100)+'%';setPressed(sizes,'size',b.dataset.size);try{localStorage.setItem('vision-size',b.dataset.size)}catch(e){}}));
+    colors.forEach(b=>b.addEventListener('click',()=>{document.documentElement.classList.remove('vision-bw','vision-wb','vision-yellow');if(b.dataset.color)document.documentElement.classList.add('vision-'+b.dataset.color);setPressed(colors,'color',b.dataset.color);try{localStorage.setItem('vision-color',b.dataset.color)}catch(e){}}));
+    document.querySelector('.vision-reset').addEventListener('click',()=>{document.documentElement.style.removeProperty('font-size');document.documentElement.classList.remove('vision-bw','vision-wb','vision-yellow');setPressed(sizes,'size','16');setPressed(colors,'color','');try{localStorage.removeItem('vision-size');localStorage.removeItem('vision-color')}catch(e){}});
 })();
 </script>
 
