@@ -33,6 +33,10 @@ if (!$current) {
 }
 if (isset($navigationTitles[$current['slug']])) $current['title'] = $navigationTitles[$current['slug']];
 $content = (string) $current['content'];
+if ($current['slug'] === 'vacancies' && trim($content) === '') {
+    $content = '<p>Сведения о вакантных местах уточняются. По вопросам приёма обращайтесь в администрацию школы.</p>';
+}
+
 if ($current['slug'] === 'facilities' && isset($sectionsBySlug['accessibility'])) {
     $accessibility = $sectionsBySlug['accessibility'];
     if (trim((string) $accessibility['content']) !== '' || $accessibility['document'] !== '') {
