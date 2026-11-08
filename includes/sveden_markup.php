@@ -263,6 +263,50 @@ function sveden_add_markup(string $slug, string $html): string
             }
         }
 
+        if ($slug === 'education') {
+            $educationFields = [
+                'Образовательная программа' => 'eduProf',
+                'Уровень образования' => 'eduLevel',
+                'Форма обучения' => 'eduForm',
+                'Срок получения образования' => 'learningTerm',
+                'Срок реализации' => 'learningTerm',
+                'Учебные предметы' => 'eduPred',
+                'Практики' => 'eduPrac',
+            ];
+            foreach ($xpath->query('.//p', $root) as $paragraph) {
+                $text = trim($paragraph->textContent);
+                foreach ($educationFields as $label => $property) {
+                    if (str_contains($text, $label.':') || str_starts_with($text, $label)) sveden_mark($paragraph, $property);
+                }
+            }
+            foreach ($xpath->query('.//a[@href]', $root) as $link) {
+                $text = trim($link->textContent);
+                if (preg_match('/численност|при[её]м|перевод|отчислен|восстановлен/ui', $text)) {
+                    if (preg_match('/численност/ui', $text)) sveden_mark($link, 'eduChislenEl');
+                    elseif (preg_match('/при[её]м/ui', $text)) sveden_mark($link, 'eduPriemEl');
+                    else sveden_mark($link, 'eduPerevodEl');
+                }
+            }
+        }
+
+        if ($slug === 'education-standards') {
+            foreach ($xpath->query('.//*[self::p or self::li or self::dd or self::a]') as $node) {
+                if (trim($node->textContent) !== '') sveden_mark($node, 'eduFedDoc');
+            }
+        }
+
+        if ($slug === 'facilities') {
+            foreach ($xpath->query('.//h3|.//h4') as $heading) {
+                $value = sveden_next_element($heading);
+                if (!$value instanceof DOMElement || trim($value->textContent) === '') continue;
+                $key = trim($heading->textContent);
+                if (str_contains($key, 'информационным системам')) sveden_mark($value, 'comNet');
+                elseif (str_contains($key, 'Электронные образовательные ресурсы')) sveden_mark($value, 'erList');
+                elseif (str_contains($key, 'доступа в здания')) sveden_mark($value, 'ovz');
+                elseif (str_contains($key, 'специальных технических средств')) sveden_mark($value, 'techOvz');
+            }
+        }
+
         if ($slug === 'paid') {
             $fields = [
                 'Документ об установлении размера платы, взимаемой с родителей (законных представителей)' => ['paidParents'],
@@ -279,13 +323,29 @@ function sveden_add_markup(string $slug, string $html): string
             }
         }
 
-        if ($slug === 'international-cooperation') {
-            foreach ($xpath->query('.//h3', $root) as $heading) {
-                if (trim($heading->textContent) !== 'Документ о заключенных и планируемых к заключению договорах с иностранными и (или) международными организациями по вопросам образования и науки') continue;
-                $value = sveden_next_element($heading);
-                if ($value instanceof DOMElement && trim($value->textContent) === 'Не заключены') sveden_mark($value, 'internationalDog');
+        if ($slug === 'scholarships') {
+            foreach ($xpath->query('.//p', $root) as $paragraph) {
+                if (trim($paragraph->textContent) !== '') sveden_mark($paragraph, 'grant');
             }
         }
+
+        if ($slug === 'international-cooperation') {
+            foreach ($xpath->query('.//h3', $root) as $heading) {
+                $value = sveden_next_element($heading);
+                if ($value instanceof DOMElement && trim($value->textContent) !== '' && str_contains(trim($heading->textContent), 'договор')) {
+                    sveden_mark($value, 'internationalDog');
+                }
+            }
+        }
+
+        if ($slug === 'catering') {
+            foreach ($xpath->query('.//p', $root) as $paragraph) {
+                $text = trim($paragraph->textContent);
+                if ($text === '1. Питание для обучающихся не организуется.') sveden_mark($paragraph, 'meals');
+                elseif (str_starts_with($text, 'Охрана здоровья в МБУ ДО СШОР-4 обеспечивается')) sveden_mark($paragraph, 'health');
+            }
+        }
+
 
         $result = '';
         foreach ($root->childNodes as $child) $result .= $dom->saveHTML($child);
