@@ -232,3 +232,32 @@ body.admin-page > header a.text-red-400 {
 body.admin-page > header a:hover {
     color: #ffffff;
 }
+
+/* News cards on the homepage and news listing. */
+.news-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+.news-card {
+    display: flex; flex-direction: column; min-width: 0;
+    background: #fff; border: 1px solid #e9dddd; border-radius: 1rem;
+    box-shadow: 0 8px 24px rgba(74, 32, 32, .08);
+    transition: box-shadow .2s ease, transform .2s ease;
+}
+.news-card:hover { box-shadow: 0 14px 32px rgba(74, 32, 32, .14); transform: translateY(-3px); }
+.news-card__image, .news-card__placeholder {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; aspect-ratio: 16 / 10; border-radius: 1rem 1rem 0 0;
+    background: #f5eded;
+}
+.news-card__image img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: inherit; }
+.news-card__placeholder { background: #f8eeee; color: #8f1717; }
+.news-card__placeholder span { border: 1px solid #dcbcbc; border-radius: 999px; padding: .4rem .9rem; font-size: .8rem; font-weight: 700; letter-spacing: .05em; }
+.news-card__content { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 1.5rem; }
+.news-card__date { color: #515a66; font-size: .875rem; font-weight: 600; }
+#main .news-card__title { margin: .65rem 0 0; font-size: 1.35rem; line-height: 1.3; }
+#main .news-card__title a { color: #20242b; text-decoration: none; }
+#main .news-card__title a:hover, #main .news-card__title a:focus-visible { color: #a51a1a; text-decoration: underline; }
+.news-card__excerpt { margin: .75rem 0 1.25rem; color: #515a66; line-height: 1.6; overflow-wrap: anywhere; }
+#main .news-card__more { margin-top: auto; padding: .35rem 0; color: #a51a1a; font-weight: 700; text-decoration: underline; text-underline-offset: .2em; }
+#main .news-card__more:hover { color: #761313; }
+.news-card__more span { display: inline-block; margin-left: .25rem; }
+@media (min-width: 640px) { .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .news-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
