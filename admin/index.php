@@ -6,6 +6,7 @@ require_once __DIR__.'/../includes/upload_names.php';
 require_once __DIR__.'/../includes/legal_editor.php';
 require_once __DIR__.'/../includes/news.php';
 require_once __DIR__.'/../includes/news_social.php';
+require_once __DIR__.'/../includes/hero.php';
 
 // Session and authentication must be handled before any HTML is sent.
 session_start();
@@ -18,7 +19,7 @@ $csrf = $_SESSION['csrf'];
 $error = '';
 $notice = (string) ($_SESSION['notice'] ?? '');
 unset($_SESSION['notice']);
-$tabs = ['news' => 'Новости', 'competitions' => 'Соревнования', 'schedule' => 'Расписание', 'coaches' => 'Тренеры', 'gallery' => 'Фотоальбомы', 'legal' => 'Юридические данные'];
+$tabs = ['hero' => 'Фон главной', 'news' => 'Новости', 'competitions' => 'Соревнования', 'schedule' => 'Расписание', 'coaches' => 'Тренеры', 'gallery' => 'Фотоальбомы', 'legal' => 'Юридические данные'];
 $days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 $tab = (string) ($_GET['tab'] ?? 'competitions');
 if (!isset($tabs[$tab])) {
@@ -102,6 +103,19 @@ if ($logged && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '')
         $noticeText = 'Изменения сохранены.';
         $pdo->beginTransaction();
         switch ($action) {
+            case 'hero_background':
+                $file = $_FILES['background'] ?? [];
+                $hasUpload = ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+                if (!empty($_POST['remove_background']) && $hasUpload) throw new RuntimeException('Нельзя одновременно удалить и заменить фотографию.');
+                $background = hero_background($pdo);
+                if (!empty($_POST['remove_background'])) $background = '';
+                elseif ($hasUpload) {
+                    $background = hero_background_upload($file);
+                    $newFiles[] = $background;
+                }
+                $pdo->prepare('INSERT OR REPLACE INTO site_settings(name,value) VALUES(?,?)')->execute(['hero_background', $background]);
+                $noticeText = 'Фон главной страницы сохранён.';
+                break;
             case 'social_settings':
                 social_settings_save($_POST);
                 $noticeText = 'Настройки соцсетей сохранены. Для ранее опубликованных новостей запустите повторную синхронизацию вручную.';
@@ -316,6 +330,7 @@ if ($logged && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '')
 
 // Load view data only after authentication and request handling.
 if ($logged) {
+    $heroBackground = hero_background($pdo);
     news_schema($pdo);
     $newsItems = $pdo->query('SELECT * FROM news ORDER BY published_date DESC,id DESC')->fetchAll();
     $competitions = $pdo->query('SELECT * FROM competitions ORDER BY event_date DESC')->fetchAll();
@@ -385,7 +400,7 @@ function adminDelete(string $table, int $id, string $tab, string $csrf): void
 </form>
 <?php if ($error): ?><div class="mb-5 rounded-xl bg-red-950 p-4 text-red-200"><?=h($error)?></div><?php elseif ($notice): ?><div class="mb-5 rounded-xl bg-green-950 p-4 text-green-200"><?=h($notice)?></div><?php endif; ?>
 <nav class="mb-8 flex flex-wrap gap-2"><?php foreach ($tabs as $key => $label): ?><a class="rounded-lg px-4 py-2 <?=$tab === $key ? 'bg-red-600' : 'bg-neutral-800 hover:bg-neutral-700'?>" href="?tab=<?=h($key)?>"><?=h($label)?></a><?php endforeach; ?></nav>
-<?php if ($tab === 'news'): define('ADMIN_PAGE_ACTIVE', true); require __DIR__.'/news-form.php'; else: ?>
+<?php if ($tab === 'hero'): define('ADMIN_PAGE_ACTIVE', true); require __DIR__.'/hero-form.php'; elseif ($tab === 'news'): define('ADMIN_PAGE_ACTIVE', true); require __DIR__.'/news-form.php'; else: ?>
 
 <?php if($tab==='competitions'):?><div class="grid gap-6 lg:grid-cols-[1fr_1.2fr]"><form method="post" enctype="multipart/form-data" class="card space-y-4"><h2 class="text-xl font-bold">Добавить соревнование</h2><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="competition"><input type="hidden" name="tab" value="competitions"><label class="block">Название<input class="field mt-1" name="title" required></label><label class="block">Дата<input class="field mt-1" type="date" name="event_date" required></label><label class="block">Место<input class="field mt-1" name="place" required></label><label class="block">Возрастная категория<input class="field mt-1" name="age_group"></label><label class="block">Статус<select class="field mt-1" name="status"><option value="upcoming">Предстоящее</option><option value="completed">Завершено</option></select></label><label class="block">Положение / результаты (PDF, DOC, DOCX)<input class="field mt-1" type="file" name="document" accept=".pdf,.doc,.docx"></label><button class="rounded-lg bg-red-600 px-5 py-3 font-bold">Добавить</button></form><div class="space-y-3"><h2 class="text-xl font-bold">Соревнования (<?=$competitions?count($competitions):0?>)</h2><?php foreach($competitions as $r):?><details class="card"><summary class="cursor-pointer font-bold"><?=h($r['title'])?> <span class="text-sm text-gray-400">· <?=h($r['event_date'])?></span></summary><form method="post" enctype="multipart/form-data" class="mt-4 grid gap-3 sm:grid-cols-2"><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="competition"><input type="hidden" name="tab" value="competitions"><input type="hidden" name="id" value="<?=$r['id']?>"><input type="hidden" name="old_document" value="<?=h($r['document'])?>"><label>Название<input class="field mt-1" name="title" value="<?=h($r['title'])?>" required></label><label>Дата<input class="field mt-1" type="date" name="event_date" value="<?=h($r['event_date'])?>" required></label><label>Место<input class="field mt-1" name="place" value="<?=h($r['place'])?>" required></label><label>Возраст<input class="field mt-1" name="age_group" value="<?=h($r['age_group'])?>"></label><label>Статус<select class="field mt-1" name="status"><option value="upcoming" <?=$r['status']==='upcoming'?'selected':''?>>Предстоящее</option><option value="completed" <?=$r['status']==='completed'?'selected':''?>>Завершено</option></select></label><label>Новый файл<input class="field mt-1" type="file" name="document" accept=".pdf,.doc,.docx"></label><div class="col-span-full flex items-center gap-3"><button class="rounded bg-neutral-700 px-4 py-2">Сохранить</button></div></form><?php adminDelete('competitions',(int)$r['id'],'competitions',$csrf)?></details><?php endforeach;?></div></div>
 <?php elseif($tab==='schedule'):?><div class="grid gap-6 lg:grid-cols-[.8fr_1.2fr]"><form method="post" class="card space-y-4"><h2 class="text-xl font-bold">Добавить тренировку</h2><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="schedule"><input type="hidden" name="tab" value="schedule"><label class="block">День<select class="field mt-1" name="weekday"><?php foreach($days as $d):?><option><?=h($d)?></option><?php endforeach;?></select></label><label class="block">Время<input class="field mt-1" name="time" placeholder="16:00–17:30" required></label><label class="block">Группа<input class="field mt-1" name="group_name" placeholder="НП-1 / УТГ / ССМ" required></label><label class="block">Дисциплина<input class="field mt-1" name="discipline" required></label><label class="block">Тренер<select class="field mt-1" name="coach_id"><option value="">Не выбран</option><?php foreach($coaches as $c):?><option value="<?=$c['id']?>"><?=h($c['name'])?></option><?php endforeach;?></select></label><label class="block">Зал / площадка<input class="field mt-1" name="venue" required></label><button class="rounded-lg bg-red-600 px-5 py-3 font-bold">Добавить</button></form><div class="space-y-3"><h2 class="text-xl font-bold">Занятия</h2><?php foreach($schedules as $r):?><details class="card"><summary class="cursor-pointer font-bold"><?=h($r['weekday'])?> · <?=h($r['time'])?> · <?=h($r['group_name'])?></summary><form method="post" class="mt-4 grid gap-3 sm:grid-cols-2"><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="schedule"><input type="hidden" name="tab" value="schedule"><input type="hidden" name="id" value="<?=$r['id']?>"><label>День<select class="field mt-1" name="weekday"><?php foreach($days as $d):?><option <?=$d===$r['weekday']?'selected':''?>><?=h($d)?></option><?php endforeach;?></select></label><label>Время<input class="field mt-1" name="time" value="<?=h($r['time'])?>"></label><label>Группа<input class="field mt-1" name="group_name" value="<?=h($r['group_name'])?>"></label><label>Дисциплина<input class="field mt-1" name="discipline" value="<?=h($r['discipline'])?>"></label><label>Тренер<select class="field mt-1" name="coach_id"><option value="">Не выбран</option><?php foreach($coaches as $c):?><option value="<?=$c['id']?>" <?=((int)$r['coach_id']===(int)$c['id']?'selected':'')?>><?=h($c['name'])?></option><?php endforeach;?></select></label><label>Зал<input class="field mt-1" name="venue" value="<?=h($r['venue'])?>"></label><div class="col-span-full flex gap-3"><button class="rounded bg-neutral-700 px-4 py-2">Сохранить</button></div></form><?php adminDelete('schedules',(int)$r['id'],'schedule',$csrf)?></details><?php endforeach;?></div></div>

@@ -261,3 +261,9 @@ body.admin-page > header a:hover {
 .news-card__more span { display: inline-block; margin-left: .25rem; }
 @media (min-width: 640px) { .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .news-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* Optional homepage background: the overlay keeps dark text readable. */
+.hero-photo, .hero-overlay { position: absolute; inset: 0; }
+.hero-photo { background-position: center; background-size: cover; }
+.hero-overlay { background: linear-gradient(90deg, rgba(255,255,255,.97) 0%, rgba(255,250,250,.94) 40%, rgba(255,247,247,.65) 100%); }
+@media (max-width: 640px) { .hero-overlay { background: rgba(255,250,250,.92); } }
