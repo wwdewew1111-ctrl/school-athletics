@@ -262,8 +262,25 @@ body.admin-page > header a:hover {
 @media (min-width: 640px) { .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .news-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-/* Optional homepage background: preserve contrast where the text is placed. */
+/* Show the background photo without a full-width veil; protect only the text. */
 .hero-photo, .hero-overlay { position: absolute; inset: 0; }
 .hero-photo { background-position: center; background-size: cover; }
-.hero-overlay { background: linear-gradient(90deg, rgba(255,250,250,.97) 0%, rgba(255,250,250,.94) max(40%, calc(50% - 1rem)), rgba(255,250,250,.75) max(60%, calc(50% + 9rem)), rgba(255,250,250,.08) 100%); }
-@media (max-width: 640px) { .hero-overlay { background: rgba(255,250,250,.88); } }
+.hero-overlay { background: transparent; }
+.hero-section--photo > .relative { display: flex; align-items: flex-start; flex-direction: column; }
+.hero-section--photo > .relative > p,
+.hero-section--photo > .relative > h1,
+.hero-section--photo > .relative > div {
+    position: relative; isolation: isolate;
+}
+.hero-section--photo > .relative > p::before,
+.hero-section--photo > .relative > h1::before,
+.hero-section--photo > .relative > div::before {
+    content: ''; position: absolute; inset: -.4rem -.65rem; z-index: -1;
+    background: rgba(255, 250, 250, .95); border-radius: .55rem;
+}
+.hero-section--photo > .relative > div::before { inset: -.55rem; }
+@media (max-width: 640px) {
+    .hero-section--photo > .relative > p::before,
+    .hero-section--photo > .relative > h1::before,
+    .hero-section--photo > .relative > div::before { inset: -.3rem; }
+}
