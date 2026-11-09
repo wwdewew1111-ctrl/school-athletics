@@ -262,8 +262,8 @@ body.admin-page > header a:hover {
 @media (min-width: 640px) { .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .news-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-/* Optional homepage background: the overlay keeps dark text readable. */
+/* Optional homepage background: preserve contrast where the text is placed. */
 .hero-photo, .hero-overlay { position: absolute; inset: 0; }
 .hero-photo { background-position: center; background-size: cover; }
-.hero-overlay { background: linear-gradient(90deg, rgba(255,255,255,.97) 0%, rgba(255,250,250,.94) 40%, rgba(255,247,247,.65) 100%); }
-@media (max-width: 640px) { .hero-overlay { background: rgba(255,250,250,.92); } }
+.hero-overlay { background: linear-gradient(90deg, rgba(255,250,250,.97) 0%, rgba(255,250,250,.94) max(40%, calc(50% - 1rem)), rgba(255,250,250,.75) max(60%, calc(50% + 9rem)), rgba(255,250,250,.08) 100%); }
+@media (max-width: 640px) { .hero-overlay { background: rgba(255,250,250,.88); } }
