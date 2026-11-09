@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__.'/db.php';
 $pageTitle = $pageTitle ?? ORG_NAME;
-$nav = [['Главная','index.php'],['Соревнования','competitions.php'],['Расписание','schedule.php'],['Тренеры','coaches.php'],['Фотоальбом','gallery.php'],['Сведения школы','/sveden/common']];
+$nav = [['Главная','index.php'],['Соревнования','competitions.php'],['Расписание','schedule.php'],['Тренеры','coaches.php'],['Спортсмены','athletes.php'],['Фотоальбом','gallery.php'],['Сведения об образовательной организации','/sveden/common']];
 $themeUrl = 'theme.css?v='.(string) filemtime(__DIR__.'/../theme.css');
 $currentPage = basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'index.php'));
 if (isset($route) && $route !== null) $currentPage = 'legal.php';
@@ -26,7 +26,7 @@ if (isset($route) && $route !== null) $currentPage = 'legal.php';
         <div class="site-header-row">
             <a href="index.php" class="site-brand">
                 <img class="brand-mark" src="assets/logo.jpg" width="425" height="600" alt="">
-                <span class="brand-name">МБУ ДО «СШОР № 4»<small>по легкой атлетике · Владимир</small></span>
+                <span class="brand-name"><?=h(ORG_NAME)?><small>Владимир</small></span>
             </a>
             <button id="menuBtn" class="menu-toggle" type="button" aria-label="Открыть меню" aria-controls="mobileNav" aria-expanded="false"><span aria-hidden="true">☰</span></button>
             <nav id="nav" class="desktop-nav" aria-label="Основная навигация">

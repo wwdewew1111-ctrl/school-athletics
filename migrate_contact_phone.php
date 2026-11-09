@@ -10,12 +10,9 @@ $apply = ($argv[1] ?? '') === '--apply';
 $dbFile = __DIR__.'/includes/database.sqlite';
 if (!is_file($dbFile)) { fwrite(STDERR, "Database not found; nothing was created.\n"); exit(1); }
 $replacements = [
-    'tel:+74922545389' => 'tel:+74222545389',
-    '(4922) 54-53-89' => '(4222) 54-53-89',
-    '(4922)54-53-89' => '(4222) 54-53-89',
-    '8-4922-54-53-89' => '(4222) 54-53-89',
-    '8(4922)545389' => '(4222) 54-53-89',
-    '(4222)54-53-89' => '(4222) 54-53-89',
+    'tel:+74222545389' => 'tel:+74922545389',
+    '(4222) 54-53-89' => '(4922)54-53-89',
+    '(4222)54-53-89' => '(4922)54-53-89',
 ];
 try {
     $pdo = new PDO('sqlite:'.$dbFile, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);

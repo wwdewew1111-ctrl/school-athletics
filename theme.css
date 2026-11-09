@@ -51,6 +51,8 @@ body .bg-black\/70 { color: #fff; }
 .prose-school a, .legal-editor a { color: #a51a1a; text-decoration: underline; }
 .prose-school { overflow-wrap: anywhere; }
 .prose-school iframe, .prose-school img { max-width: 100%; }
+.vacancies-images { display: grid; gap: 1.5rem; justify-items: start; }
+.vacancies-images img { display: block; width: 100%; max-width: 544px; height: auto; }
 
 .field {
     width: 100%;
@@ -262,25 +264,27 @@ body.admin-page > header a:hover {
 @media (min-width: 640px) { .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .news-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-/* Show the background photo without a full-width veil; protect only the text. */
-.hero-photo, .hero-overlay { position: absolute; inset: 0; }
-.hero-photo { background-position: center; background-size: cover; }
-.hero-overlay { background: transparent; }
-.hero-section--photo > .relative { display: flex; align-items: flex-start; flex-direction: column; }
-.hero-section--photo > .relative > p,
-.hero-section--photo > .relative > h1,
-.hero-section--photo > .relative > div {
-    position: relative; isolation: isolate;
+/* Homepage: one readable card, with the photograph kept visible. */
+.hero-section { position: relative; overflow: hidden; background: linear-gradient(120deg, #f8eeee, #f3dede); }
+.hero-photo { position: absolute; inset: 0; background-position: center 42%; background-size: cover; background-repeat: no-repeat; }
+.hero-inner { position: relative; display: flex; align-items: center; width: min(100% - 2rem, 1200px); min-height: clamp(36rem, 43vw, 52rem); margin-inline: auto; padding-block: 3rem; }
+.hero-card { width: min(100%, 31rem); padding: clamp(1.5rem, 3vw, 2.75rem); border: 1px solid rgba(255,255,255,.8); border-radius: 1.25rem; background: rgba(255,255,255,.96); color: #20242b; box-shadow: 0 16px 45px rgba(24,24,30,.18); }
+.hero-eyebrow { margin: 0 0 1rem; color: #a51a1a; font-size: .75rem; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }
+#main .hero-card h1 { margin: 0; font-size: clamp(2.25rem, 3.5vw, 3.5rem); font-weight: 900; letter-spacing: -.035em; line-height: 1.08; }
+.hero-card h1 span { color: #a51a1a; }
+.hero-description { margin: 1.25rem 0 0; max-width: 25rem; color: #343b45; font-size: 1.05rem; line-height: 1.6; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; }
+#main .hero-button { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; min-height: 3rem; padding: .75rem 1.1rem; border: 1px solid #b91c1c; border-radius: .6rem; font-size: .9375rem; font-weight: 700; text-align: center; text-decoration: none; }
+#main .hero-button--primary { background: #a51a1a; color: #fff; }
+#main .hero-button--primary:hover { background: #831414; }
+#main .hero-button--secondary { background: #fff; color: #8f1717; }
+#main .hero-button--secondary:hover { background: #fff1f1; }
+#main .hero-more { display: inline-block; margin-top: 1.25rem; color: #8f1717; font-size: .875rem; font-weight: 600; }
+@media (max-width: 700px) {
+    .hero-section--photo { padding-top: clamp(13rem, 62vw, 22rem); }
+    .hero-section--photo .hero-photo { bottom: auto; height: clamp(13rem, 62vw, 22rem); background-position: center 40%; }
+    .hero-inner { min-height: 0; padding-block: 1rem 1.5rem; }
+    .hero-card { width: 100%; padding: 1.5rem; box-shadow: 0 8px 24px rgba(74,32,32,.1); }
+    #main .hero-card h1 { font-size: clamp(2rem, 8vw, 2.75rem); }
 }
-.hero-section--photo > .relative > p::before,
-.hero-section--photo > .relative > h1::before,
-.hero-section--photo > .relative > div::before {
-    content: ''; position: absolute; inset: -.4rem -.65rem; z-index: -1;
-    background: rgba(255, 250, 250, .95); border-radius: .55rem;
-}
-.hero-section--photo > .relative > div::before { inset: -.55rem; }
-@media (max-width: 640px) {
-    .hero-section--photo > .relative > p::before,
-    .hero-section--photo > .relative > h1::before,
-    .hero-section--photo > .relative > div::before { inset: -.3rem; }
-}
+@media (max-width: 380px) { .hero-actions { flex-direction: column; } }

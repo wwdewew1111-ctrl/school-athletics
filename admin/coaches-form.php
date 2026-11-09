@@ -6,7 +6,6 @@ function coachFields(array $r): void
     $fields = [
         'name' => 'ФИО', 'title' => 'Должность', 'specialization' => 'Преподаваемые дисциплины',
         'education' => 'Уровень профессионального образования', 'qualification' => 'Квалификационная категория',
-        'academic_degree' => 'Ученая степень', 'academic_title' => 'Ученое звание',
         'experience_text' => 'Продолжительность опыта работы в профессиональной сфере',
     ];
     foreach ($fields as $key => $label): ?>

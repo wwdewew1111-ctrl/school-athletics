@@ -33,8 +33,9 @@ if (!$current) {
 }
 if (isset($navigationTitles[$current['slug']])) $current['title'] = $navigationTitles[$current['slug']];
 $content = (string) $current['content'];
-if ($current['slug'] === 'vacancies' && trim($content) === '') {
-    $content = '<p>Сведения о вакантных местах уточняются. По вопросам приёма обращайтесь в администрацию школы.</p>';
+if ($current['slug'] === 'vacancies') {
+    $content = '<div class="vacancies-images"><img src="assets/vacancies-admission-1.jpg" width="544" height="768" alt="Объявление о наборе детей в группы общей физической подготовки"><img src="assets/vacancies-admission-2.jpg" width="544" height="768" alt="Объявление о наборе детей в группы общей физической подготовки"></div>';
+    $current['document'] = '';
 }
 
 if ($current['slug'] === 'facilities' && isset($sectionsBySlug['accessibility'])) {

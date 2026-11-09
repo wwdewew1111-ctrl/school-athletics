@@ -12,6 +12,8 @@ require_once __DIR__.'/../includes/hero.php';
 session_start();
 $pdo = db();
 coach_columns($pdo);
+require_once __DIR__.'/../includes/athletes.php';
+athlete_schema($pdo);
 if (empty($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
 }
@@ -19,7 +21,7 @@ $csrf = $_SESSION['csrf'];
 $error = '';
 $notice = (string) ($_SESSION['notice'] ?? '');
 unset($_SESSION['notice']);
-$tabs = ['hero' => 'Фон главной', 'news' => 'Новости', 'competitions' => 'Соревнования', 'schedule' => 'Расписание', 'coaches' => 'Тренеры', 'gallery' => 'Фотоальбомы', 'legal' => 'Юридические данные'];
+$tabs = ['hero' => 'Фон главной', 'news' => 'Новости', 'competitions' => 'Соревнования', 'schedule' => 'Расписание', 'coaches' => 'Тренеры', 'athletes' => 'Спортсмены', 'gallery' => 'Фотоальбомы', 'legal' => 'Юридические данные'];
 $days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 $tab = (string) ($_GET['tab'] ?? 'competitions');
 if (!isset($tabs[$tab])) {
@@ -162,10 +164,15 @@ if ($logged && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '')
                 break;
             case 'delete':
                 $table = (string) ($_POST['table'] ?? '');
-                if (!in_array($table, ['competitions', 'schedules', 'coaches', 'albums', 'photos'], true) || $id < 1) {
+                if (!in_array($table, ['competitions', 'schedules', 'coaches', 'athletes', 'albums', 'photos'], true) || $id < 1) {
                     throw new RuntimeException('Недопустимая запись.');
                 }
                 $row = $existing($table, $id);
+                if ($table === 'coaches') {
+                    $linked = $pdo->prepare('SELECT COUNT(*) FROM athletes WHERE coach_id=?');
+                    $linked->execute([$id]);
+                    if ((int) $linked->fetchColumn() > 0) throw new RuntimeException('Нельзя удалить тренера, пока за ним закреплены спортсмены. Сначала выберите для них другого тренера.');
+                }
                 if ($table === 'photos') {
                     $pdo->prepare('UPDATE albums SET cover = ? WHERE id = ? AND cover = ?')->execute(['', $row['album_id'], $row['path']]);
                 }
@@ -213,6 +220,11 @@ if ($logged && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '')
                 $name = trim((string) ($_POST['name'] ?? ''));
                 if ($name === '') throw new RuntimeException('Укажите ФИО тренера.');
                 $old = $id > 0 ? $existing('coaches', $id) : null;
+                if ($old && !isset($_POST['visible'])) {
+                    $linked = $pdo->prepare('SELECT COUNT(*) FROM athletes WHERE coach_id=?');
+                    $linked->execute([$id]);
+                    if ((int) $linked->fetchColumn() > 0) throw new RuntimeException('Нельзя скрыть тренера, пока за ним закреплены спортсмены. Сначала выберите для них другого тренера.');
+                }
                 $file = $_FILES['photo'] ?? [];
                 if (!empty($_POST['remove_photo']) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
                     throw new RuntimeException('Нельзя одновременно удалить и заменить фотографию.');
@@ -225,14 +237,38 @@ if ($logged && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '')
                     $name, trim((string) ($_POST['title'] ?? '')), trim((string) ($_POST['specialization'] ?? '')),
                     $experience, $photo, trim((string) ($_POST['achievements'] ?? '')),
                     trim((string) ($_POST['education'] ?? '')), trim((string) ($_POST['qualification'] ?? '')),
-                    trim((string) ($_POST['academic_degree'] ?? '')), trim((string) ($_POST['academic_title'] ?? '')),
                     trim((string) ($_POST['professional_development'] ?? '')), trim((string) ($_POST['professional_retraining'] ?? '')),
                     $experienceText, isset($_POST['visible']) ? 1 : 0,
                 ];
                 if ($old) {
-                    $pdo->prepare('UPDATE coaches SET name=?,title=?,specialization=?,experience=?,photo=?,achievements=?,education=?,qualification=?,academic_degree=?,academic_title=?,professional_development=?,professional_retraining=?,experience_text=?,visible=? WHERE id=?')->execute([...$values, $id]);
+                    $pdo->prepare('UPDATE coaches SET name=?,title=?,specialization=?,experience=?,photo=?,achievements=?,education=?,qualification=?,professional_development=?,professional_retraining=?,experience_text=?,visible=? WHERE id=?')->execute([...$values, $id]);
                 } else {
-                    $pdo->prepare('INSERT INTO coaches(name,title,specialization,experience,photo,achievements,education,qualification,academic_degree,academic_title,professional_development,professional_retraining,experience_text,visible) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute($values);
+                    $pdo->prepare('INSERT INTO coaches(name,title,specialization,experience,photo,achievements,education,qualification,professional_development,professional_retraining,experience_text,visible) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)')->execute($values);
+                }
+                break;
+            case 'athlete':
+                $name = trim((string) ($_POST['name'] ?? ''));
+                $achievements = trim((string) ($_POST['achievements'] ?? ''));
+                $birthDate = trim((string) ($_POST['birth_date'] ?? ''));
+                $sportsTitle = trim((string) ($_POST['sports_title'] ?? ''));
+                $schoolEntryDate = trim((string) ($_POST['school_entry_date'] ?? ''));
+                $coachId = filter_var($_POST['coach_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                if ($name === '' || strlen($name) > 800 || strlen($sportsTitle) > 800 || strlen($achievements) > 80000) throw new RuntimeException('Укажите ФИО спортсмена и проверьте длину полей.');
+                if (!athlete_valid_date($birthDate) || !athlete_valid_date($schoolEntryDate)) throw new RuntimeException('Укажите корректные даты рождения и поступления в школу.');
+                $coach = $coachId ? $pdo->prepare('SELECT id FROM coaches WHERE id=? AND visible=1') : null;
+                if ($coach) $coach->execute([$coachId]);
+                if (!$coach || !$coach->fetchColumn()) throw new RuntimeException('Выберите тренера из списка опубликованных тренеров.');
+                $old = $id > 0 ? $existing('athletes', $id) : null;
+                $file = $_FILES['photo'] ?? [];
+                if (!empty($_POST['remove_photo']) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) throw new RuntimeException('Нельзя одновременно удалить и заменить фотографию.');
+                $photo = athlete_photo_upload($file);
+                if ($photo !== '') $newFiles[] = $photo;
+                $photo = $photo ?: (!empty($_POST['remove_photo']) ? '' : ($old['photo'] ?? ''));
+                $values = [$name, $coachId, $birthDate, $sportsTitle, $schoolEntryDate, $achievements, $photo];
+                if ($old) {
+                    $pdo->prepare('UPDATE athletes SET name=?,coach_id=?,birth_date=?,sports_title=?,school_entry_date=?,achievements=?,photo=? WHERE id=?')->execute([...$values, $id]);
+                } else {
+                    $pdo->prepare('INSERT INTO athletes(name,coach_id,birth_date,sports_title,school_entry_date,achievements,photo) VALUES(?,?,?,?,?,?,?)')->execute($values);
                 }
                 break;
             case 'album':
@@ -336,6 +372,7 @@ if ($logged) {
     $competitions = $pdo->query('SELECT * FROM competitions ORDER BY event_date DESC')->fetchAll();
     $schedules = $pdo->query('SELECT s.*,c.name coach FROM schedules s LEFT JOIN coaches c ON c.id=s.coach_id ORDER BY s.id DESC')->fetchAll();
     $coaches = $pdo->query('SELECT * FROM coaches ORDER BY name')->fetchAll();
+    $athletes = $pdo->query('SELECT a.*,c.name coach_name FROM athletes a JOIN coaches c ON c.id=a.coach_id ORDER BY a.name')->fetchAll();
     $albums = $pdo->query('SELECT * FROM albums ORDER BY album_date DESC')->fetchAll();
     $photos = $pdo->query('SELECT p.*,a.title album_title FROM photos p JOIN albums a ON a.id=p.album_id ORDER BY p.id DESC')->fetchAll();
     $legal = $pdo->query('SELECT * FROM legal_sections ORDER BY id')->fetchAll();
@@ -379,7 +416,7 @@ function adminDelete(string $table, int $id, string $tab, string $csrf): void
     <form method="post" class="w-full max-w-md rounded-2xl border border-white/10 bg-neutral-900 p-8">
         <a href="../index.php" class="text-sm text-red-400">← На сайт</a>
         <h1 class="mt-5 text-3xl font-black">Панель управления</h1>
-        <p class="mt-2 text-gray-400">МБУ ДО «СШОР № 4»</p>
+        <p class="mt-2 text-gray-400"><?=h(ORG_NAME)?></p>
         <?php if ($error): ?><p class="mt-5 rounded-lg bg-red-950 p-3 text-red-200"><?=h($error)?></p><?php endif; ?>
         <input type="hidden" name="csrf" value="<?=h($csrf)?>">
         <input type="hidden" name="action" value="login">
@@ -405,12 +442,13 @@ function adminDelete(string $table, int $id, string $tab, string $csrf): void
 <?php if($tab==='competitions'):?><div class="grid gap-6 lg:grid-cols-[1fr_1.2fr]"><form method="post" enctype="multipart/form-data" class="card space-y-4"><h2 class="text-xl font-bold">Добавить соревнование</h2><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="competition"><input type="hidden" name="tab" value="competitions"><label class="block">Название<input class="field mt-1" name="title" required></label><label class="block">Дата<input class="field mt-1" type="date" name="event_date" required></label><label class="block">Место<input class="field mt-1" name="place" required></label><label class="block">Возрастная категория<input class="field mt-1" name="age_group"></label><label class="block">Статус<select class="field mt-1" name="status"><option value="upcoming">Предстоящее</option><option value="completed">Завершено</option></select></label><label class="block">Положение / результаты (PDF, DOC, DOCX)<input class="field mt-1" type="file" name="document" accept=".pdf,.doc,.docx"></label><button class="rounded-lg bg-red-600 px-5 py-3 font-bold">Добавить</button></form><div class="space-y-3"><h2 class="text-xl font-bold">Соревнования (<?=$competitions?count($competitions):0?>)</h2><?php foreach($competitions as $r):?><details class="card"><summary class="cursor-pointer font-bold"><?=h($r['title'])?> <span class="text-sm text-gray-400">· <?=h($r['event_date'])?></span></summary><form method="post" enctype="multipart/form-data" class="mt-4 grid gap-3 sm:grid-cols-2"><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="competition"><input type="hidden" name="tab" value="competitions"><input type="hidden" name="id" value="<?=$r['id']?>"><input type="hidden" name="old_document" value="<?=h($r['document'])?>"><label>Название<input class="field mt-1" name="title" value="<?=h($r['title'])?>" required></label><label>Дата<input class="field mt-1" type="date" name="event_date" value="<?=h($r['event_date'])?>" required></label><label>Место<input class="field mt-1" name="place" value="<?=h($r['place'])?>" required></label><label>Возраст<input class="field mt-1" name="age_group" value="<?=h($r['age_group'])?>"></label><label>Статус<select class="field mt-1" name="status"><option value="upcoming" <?=$r['status']==='upcoming'?'selected':''?>>Предстоящее</option><option value="completed" <?=$r['status']==='completed'?'selected':''?>>Завершено</option></select></label><label>Новый файл<input class="field mt-1" type="file" name="document" accept=".pdf,.doc,.docx"></label><div class="col-span-full flex items-center gap-3"><button class="rounded bg-neutral-700 px-4 py-2">Сохранить</button></div></form><?php adminDelete('competitions',(int)$r['id'],'competitions',$csrf)?></details><?php endforeach;?></div></div>
 <?php elseif($tab==='schedule'):?><div class="grid gap-6 lg:grid-cols-[.8fr_1.2fr]"><form method="post" class="card space-y-4"><h2 class="text-xl font-bold">Добавить тренировку</h2><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="schedule"><input type="hidden" name="tab" value="schedule"><label class="block">День<select class="field mt-1" name="weekday"><?php foreach($days as $d):?><option><?=h($d)?></option><?php endforeach;?></select></label><label class="block">Время<input class="field mt-1" name="time" placeholder="16:00–17:30" required></label><label class="block">Группа<input class="field mt-1" name="group_name" placeholder="НП-1 / УТГ / ССМ" required></label><label class="block">Дисциплина<input class="field mt-1" name="discipline" required></label><label class="block">Тренер<select class="field mt-1" name="coach_id"><option value="">Не выбран</option><?php foreach($coaches as $c):?><option value="<?=$c['id']?>"><?=h($c['name'])?></option><?php endforeach;?></select></label><label class="block">Зал / площадка<input class="field mt-1" name="venue" required></label><button class="rounded-lg bg-red-600 px-5 py-3 font-bold">Добавить</button></form><div class="space-y-3"><h2 class="text-xl font-bold">Занятия</h2><?php foreach($schedules as $r):?><details class="card"><summary class="cursor-pointer font-bold"><?=h($r['weekday'])?> · <?=h($r['time'])?> · <?=h($r['group_name'])?></summary><form method="post" class="mt-4 grid gap-3 sm:grid-cols-2"><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="schedule"><input type="hidden" name="tab" value="schedule"><input type="hidden" name="id" value="<?=$r['id']?>"><label>День<select class="field mt-1" name="weekday"><?php foreach($days as $d):?><option <?=$d===$r['weekday']?'selected':''?>><?=h($d)?></option><?php endforeach;?></select></label><label>Время<input class="field mt-1" name="time" value="<?=h($r['time'])?>"></label><label>Группа<input class="field mt-1" name="group_name" value="<?=h($r['group_name'])?>"></label><label>Дисциплина<input class="field mt-1" name="discipline" value="<?=h($r['discipline'])?>"></label><label>Тренер<select class="field mt-1" name="coach_id"><option value="">Не выбран</option><?php foreach($coaches as $c):?><option value="<?=$c['id']?>" <?=((int)$r['coach_id']===(int)$c['id']?'selected':'')?>><?=h($c['name'])?></option><?php endforeach;?></select></label><label>Зал<input class="field mt-1" name="venue" value="<?=h($r['venue'])?>"></label><div class="col-span-full flex gap-3"><button class="rounded bg-neutral-700 px-4 py-2">Сохранить</button></div></form><?php adminDelete('schedules',(int)$r['id'],'schedule',$csrf)?></details><?php endforeach;?></div></div>
 <?php elseif($tab==='coaches'):?><?php define('ADMIN_PAGE_ACTIVE', true); require __DIR__.'/coaches-form.php'; ?>
+<?php elseif($tab==='athletes'):?><?php define('ADMIN_PAGE_ACTIVE', true); require __DIR__.'/athletes-form.php'; ?>
 <?php elseif($tab==='gallery'):?><div class="grid gap-6 lg:grid-cols-[.8fr_1.2fr]"><form method="post" enctype="multipart/form-data" class="card space-y-4"><h2 class="text-xl font-bold">Создать альбом / добавить фото</h2><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="album"><input type="hidden" name="tab" value="gallery"><label class="block">Название альбома<input class="field mt-1" name="title" required></label><label class="block">Дата<input class="field mt-1" type="date" name="album_date" required></label><label class="block">Обложка<input class="field mt-1" type="file" name="cover" accept="image/jpeg,image/png,image/webp"></label><label class="block">Фотографии (можно выбрать несколько)<input class="field mt-1" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple></label><button class="rounded-lg bg-red-600 px-5 py-3 font-bold">Создать альбом</button></form><div class="space-y-3"><h2 class="text-xl font-bold">Альбомы</h2><?php foreach($albums as $r):?><details class="card"><summary class="cursor-pointer font-bold"><?=h($r['title'])?> <span class="text-sm text-gray-400">· <?=h($r['album_date'])?></span></summary><form method="post" enctype="multipart/form-data" class="mt-4 grid gap-3 sm:grid-cols-2"><input type="hidden" name="csrf" value="<?=h($csrf)?>"><input type="hidden" name="action" value="album"><input type="hidden" name="tab" value="gallery"><input type="hidden" name="id" value="<?=$r['id']?>"><input type="hidden" name="old_cover" value="<?=h($r['cover'])?>"><label>Название<input class="field mt-1" name="title" value="<?=h($r['title'])?>" required></label><label>Дата<input class="field mt-1" type="date" name="album_date" value="<?=h($r['album_date'])?>" required></label><label>Новая обложка<input class="field mt-1" type="file" name="cover" accept="image/jpeg,image/png,image/webp"></label><label>Добавить фото<input class="field mt-1" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple></label><div class="col-span-full flex gap-3"><button class="rounded bg-neutral-700 px-4 py-2">Сохранить</button></div></form><?php adminDelete('albums',(int)$r['id'],'gallery',$csrf)?></details><?php endforeach;?><?php foreach($photos as $p):?><div class="card flex items-center justify-between gap-3 text-sm"><span><?=h($p['album_title'])?> · <?=h(basename($p['path']))?></span><?php adminDelete('photos',(int)$p['id'],'gallery',$csrf)?></div><?php endforeach;?></div></div>
 <?php elseif($tab==='legal'):?><?php define('ADMIN_PAGE_ACTIVE', true); require __DIR__.'/legal-form.php'; ?><?php endif;?>
 <?php endif; ?>
 </main>
 <?php if ($tab === 'legal'): ?><script src="legal-editor.js" defer></script><?php endif; ?>
-<footer class="mt-12 border-t border-white/10 py-5 text-center text-xs text-gray-500">Администрирование сайта · СШОР № 4 по легкой атлетике</footer>
+<footer class="mt-12 border-t border-white/10 py-5 text-center text-xs text-gray-500">Администрирование сайта · <?=h(ORG_NAME)?></footer>
 <?php endif; ?>
 </body>
 </html>
