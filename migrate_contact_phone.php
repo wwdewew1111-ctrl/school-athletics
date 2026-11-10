@@ -21,13 +21,12 @@ try {
 
     $before = (string) $row['content'];
     $after = $before;
-    $target = '<a href="tel:+74922533333" itemprop="telUchred">+7(4922)53-33-33</a>';
+    $target = '<a href="tel:+74922533333">+7(4922)53-33-33</a>';
     $fields = [
         'founder' => [
             'pattern' => '~(<dt>Учредители образовательной организации</dt><dd>(?:(?!</dd>).)*?Контактный телефон учредителя:\s*)(<a\b[^>]*>(?:(?!</a>|</dd>).)*</a>)((?:(?!</dd>).)*</dd>)~su',
             'old' => [
-                '<a href="tel:+74292533333" itemprop="telUchred">8 (4292) 53-33-33</a>',
-                '<a href="tel:+74922533333" itemprop="telUchred">8 (4922) 53-33-33</a>',
+                '<a href="tel:+74292533333">8 (4292) 53-33-33</a>',
             ],
         ],
     ];
