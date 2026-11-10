@@ -1,5 +1,5 @@
 <?php
-/** Update only the two recognized phone fields in the main legal section. */
+/** Update the recognized organization phone field in the main legal section. */
 declare(strict_types=1);
 if (php_sapi_name() !== 'cli') { http_response_code(403); exit('Forbidden'); }
 if ($argc > 2 || ($argc === 2 && $argv[1] !== '--apply')) {
@@ -21,7 +21,7 @@ try {
 
     $before = (string) $row['content'];
     $after = $before;
-    $target = '<a href="tel:+74922533333">+7(4922)53-33-33</a>';
+    $target = '<a href="tel:+74922545389">+7(4922)54-53-89</a>';
     $fields = [
         'organization' => [
             'pattern' => '~(<dt>Контактные телефоны образовательной организации\*</dt><dd>)(.*?)(</dd>)~su',
@@ -30,13 +30,7 @@ try {
                 '<a href="tel:+74222545389">(4222)54-53-89</a>',
                 '<a href="tel:+74922545389">(4922)54-53-89</a>',
                 '<a href="tel:+74922545389">(4922) 54-53-89</a>',
-            ],
-        ],
-        'founder' => [
-            'pattern' => '~(<dt>Учредители образовательной организации</dt><dd>(?:(?!</dd>).)*?Контактный телефон учредителя:\s*)(<a\b[^>]*>(?:(?!</a>|</dd>).)*</a>)((?:(?!</dd>).)*</dd>)~su',
-            'old' => [
-                '<a href="tel:+74292533333">8 (4292) 53-33-33</a>',
-                '<a href="tel:+74922533333">8 (4922) 53-33-33</a>',
+                '<a href="tel:+74922533333">+7(4922)53-33-33</a>',
             ],
         ],
     ];
