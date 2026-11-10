@@ -18,3 +18,5 @@
 *.key
 school-athletics-social-settings.json
 !/includes/.htaccess
+# Tailwind CSS regeneration (the compiled CSS is committed; Node is not needed on hosting).
+/node_modules/

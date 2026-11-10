@@ -2,7 +2,8 @@
 declare(strict_types=1);
 require_once __DIR__.'/../includes/db.php';
 require_once __DIR__.'/../includes/news.php';
-session_start();
+require_once __DIR__.'/../includes/admin_auth.php';
+admin_session_start();
 if (empty($_SESSION['admin'])) { http_response_code(403); exit('Forbidden'); }
 $path = (string) ($_GET['path'] ?? '');
 try { $file = news_image_file($path); } catch (RuntimeException $e) { http_response_code(404); exit('Not found'); }

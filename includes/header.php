@@ -13,9 +13,8 @@ if (isset($route) && $route !== null) $currentPage = 'legal.php';
     <?php if (!empty($publicBasePath)): ?><base href="<?=h($publicBasePath)?>"><?php endif; ?>
     <meta name="theme-color" content="#a51a1a">
     <title><?=h($pageTitle)?> — СШОР № 4</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config={theme:{extend:{colors:{sport:'#b91c1c',ink:'#20242b',panel:'#fff'}}}}</script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="assets/tailwind.css?v=<?=h((string) filemtime(__DIR__.'/../assets/tailwind.css'))?>">
+    <link rel="stylesheet" href="assets/local-icons.css?v=<?=h((string) filemtime(__DIR__.'/../assets/local-icons.css'))?>">
     <link rel="stylesheet" href="<?=h($themeUrl)?>">
     <script>(()=>{try{const s=localStorage.getItem('vision-size');if(['16','19','22'].includes(s))document.documentElement.style.fontSize=(Number(s)/16*100)+'%';const c=localStorage.getItem('vision-color');if(['bw','wb','yellow'].includes(c))document.documentElement.classList.add('vision-'+c)}catch(e){}})();</script>
 </head>
@@ -25,9 +24,10 @@ if (isset($route) && $route !== null) $currentPage = 'legal.php';
     <div class="site-container">
         <div class="site-header-row">
             <a href="index.php" class="site-brand">
-                <img class="brand-mark" src="assets/logo.jpg" width="425" height="600" alt="">
+                <img class="brand-mark" src="assets/logo.jpg" width="425" height="600" alt="Эмблема спортивной школы">
                 <span class="brand-name"><?=h(ORG_NAME)?><small>Владимир</small></span>
             </a>
+            <img class="state-flag" src="assets/russian-flag.svg" width="36" height="24" alt="Государственный флаг Российской Федерации">
             <button id="menuBtn" class="menu-toggle" type="button" aria-label="Открыть меню" aria-controls="mobileNav" aria-expanded="false"><span aria-hidden="true">☰</span></button>
             <nav id="nav" class="desktop-nav" aria-label="Основная навигация">
                 <?php foreach ($nav as [$label, $url]): $active = $currentPage === $url || ($url === 'index.php' && $currentPage === '') || ($url === '/sveden/common' && $currentPage === 'legal.php'); ?>
