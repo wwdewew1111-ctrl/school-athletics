@@ -7,10 +7,9 @@ require_once __DIR__.'/../includes/legal_editor.php';
 require_once __DIR__.'/../includes/news.php';
 require_once __DIR__.'/../includes/news_social.php';
 require_once __DIR__.'/../includes/hero.php';
-require_once __DIR__.'/../includes/admin_auth.php';
 
 // Session and authentication must be handled before any HTML is sent.
-admin_session_start();
+session_start();
 $pdo = db();
 coach_columns($pdo);
 require_once __DIR__.'/../includes/athletes.php';
@@ -31,29 +30,25 @@ if (!isset($tabs[$tab])) {
 
 if (isset($_GET['logout'])) {
     $_SESSION = [];
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', ['expires' => time() - 3600, 'path' => $params['path'], 'secure' => $params['secure'], 'httponly' => $params['httponly'], 'samesite' => $params['samesite']]);
     session_destroy();
     header('Location: index.php');
     exit;
 }
 
+// Temporary rollback: this previously committed hash must be treated as exposed.
+const ADMIN_PASSWORD_HASH = '$2y$12$m.vxNzXvpZA54G4vE0U5c.wbWAhkUhkX4wrZUQY7P0XiGixmiuXpq';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login') {
-    try {
-        if (!hash_equals($csrf, (string) ($_POST['csrf'] ?? ''))) {
-            throw new RuntimeException('Сессия формы истекла. Обновите страницу.');
-        }
-        if (admin_verify_login((string) ($_POST['username'] ?? ''), (string) ($_POST['password'] ?? ''))) {
-            session_regenerate_id(true);
-            $_SESSION['admin'] = true;
-            $_SESSION['csrf'] = bin2hex(random_bytes(32));
-            header('Location: index.php');
-            exit;
-        }
-        $error = 'Неверный логин или пароль.';
-    } catch (RuntimeException $e) {
-        $error = $e->getMessage();
+    if (hash_equals($csrf, (string) ($_POST['csrf'] ?? ''))
+        && hash_equals('admin', (string) ($_POST['username'] ?? ''))
+        && password_verify((string) ($_POST['password'] ?? ''), ADMIN_PASSWORD_HASH)) {
+        session_regenerate_id(true);
+        $_SESSION['admin'] = true;
+        $_SESSION['csrf'] = bin2hex(random_bytes(32));
+        header('Location: index.php');
+        exit;
     }
+    $error = 'Неверный логин, пароль или токен формы.';
 }
 $logged = !empty($_SESSION['admin']);
 
