@@ -36,7 +36,7 @@ require __DIR__.'/includes/header.php';
 <?php foreach ($rows as $c): ?>
 <article class="panel coach-card overflow-hidden rounded-2xl border border-white/5">
 <div class="coach-photo grid h-64 place-items-center bg-gradient-to-br from-neutral-800 to-red-950">
-<?php if ($c['photo']): ?><img class="h-full w-full object-cover" src="<?=h($c['photo'])?>" alt="<?=h($c['name'])?>"><?php else: ?><span class="text-7xl text-white/20" aria-hidden="true"><i class="fa-solid fa-person-running"></i></span><?php endif; ?>
+<?php if ($c['photo']): ?><img class="h-full w-full object-cover" src="<?=h($c['photo'])?>" alt="<?=h($c['name'])?>" loading="lazy"><?php else: ?><span class="text-7xl text-white/20" aria-hidden="true"><i class="fa-solid fa-person-running"></i></span><?php endif; ?>
 </div>
 <div class="coach-info p-5"><h2 class="text-xl font-bold"><?=h($c['name'])?></h2>
 <p class="coach-title mt-2 text-sm font-semibold text-red-400"><?=h($c['title'])?></p>

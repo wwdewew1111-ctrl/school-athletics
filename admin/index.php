@@ -229,7 +229,11 @@ if ($logged && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '')
                 if (!empty($_POST['remove_photo']) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
                     throw new RuntimeException('Нельзя одновременно удалить и заменить фотографию.');
                 }
-                $photo = $upload($file, 'coaches', ['jpg', 'jpeg', 'png', 'webp']);
+                $photo = athlete_photo_upload($file, 'coaches');
+                if ($photo !== '') {
+                    $newFiles[] = $photo;
+                    save_upload_name($pdo, $photo, (string) ($file['name'] ?? ''));
+                }
                 $photo = $photo ?: (!empty($_POST['remove_photo']) ? '' : ($old['photo'] ?? ''));
                 $experienceText = trim((string) ($_POST['experience_text'] ?? ''));
                 $experience = preg_match('/^\s*(\d+)/u', $experienceText, $matches) ? (int) $matches[1] : 0;

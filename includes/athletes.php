@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/photo_upload.php';
 
 function athlete_schema(PDO $pdo): void
 {
@@ -30,21 +31,8 @@ function athlete_display_date(string $value): string
     return athlete_valid_date($value) && $value !== '' ? substr($value, 8, 2).'.'.substr($value, 5, 2).'.'.substr($value, 0, 4) : $value;
 }
 
-function athlete_photo_upload(array $file): string
+function athlete_photo_upload(array $file, string $folder = 'athletes'): string
 {
-    $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
-    if ($error === UPLOAD_ERR_NO_FILE) return '';
-    if ($error !== UPLOAD_ERR_OK || !is_int($file['size'] ?? null) || $file['size'] < 1 || $file['size'] > 10 * 1024 * 1024) {
-        throw new RuntimeException('Не удалось загрузить фотографию (максимум 10 МБ).');
-    }
-    $info = @getimagesize((string) ($file['tmp_name'] ?? ''));
-    $types = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'];
-    if (!$info || !isset($types[$info[2]]) || $info[0] + $info[1] > 10000 || max($info[0] / $info[1], $info[1] / $info[0]) > 20) {
-        throw new RuntimeException('Нужна фотография JPEG, PNG или WebP с допустимыми размерами.');
-    }
-    $dir = dirname(__DIR__).'/uploads/athletes';
-    if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) throw new RuntimeException('Не удалось создать папку для фотографий спортсменов.');
-    $path = 'uploads/athletes/'.bin2hex(random_bytes(16)).'.'.$types[$info[2]];
-    if (!move_uploaded_file((string) $file['tmp_name'], dirname(__DIR__).'/'.$path)) throw new RuntimeException('Не удалось сохранить фотографию.');
-    return $path;
+    if (!in_array($folder, ['athletes', 'coaches'], true)) throw new InvalidArgumentException('Invalid photo folder.');
+    return photo_upload($file, $folder, dirname(__DIR__).'/uploads/'.$folder, [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'], 1200);
 }

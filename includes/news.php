@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/photo_upload.php';
 
 function news_schema(PDO $pdo): void
 {
@@ -23,21 +24,7 @@ function news_image_file(string $path): string
 
 function news_image_upload(array $file): string
 {
-    $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
-    if ($error === UPLOAD_ERR_NO_FILE) return '';
-    if ($error !== UPLOAD_ERR_OK || ($file['size'] ?? 0) < 1 || ($file['size'] ?? 0) > 10 * 1024 * 1024) {
-        throw new RuntimeException('Не удалось загрузить изображение (максимум 10 МБ).');
-    }
-    $info = @getimagesize((string) ($file['tmp_name'] ?? ''));
-    $types = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png'];
-    if (!$info || !isset($types[$info[2]]) || $info[0] + $info[1] > 10000 || max($info[0] / $info[1], $info[1] / $info[0]) > 20) {
-        throw new RuntimeException('Нужно изображение JPEG или PNG с допустимыми размерами.');
-    }
-    $dir = dirname(dirname(__DIR__)).'/school-athletics-news-uploads';
-    if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) throw new RuntimeException('Не удалось создать папку изображений.');
-    $filename = bin2hex(random_bytes(16)).'.'.$types[$info[2]];
-    if (!move_uploaded_file($file['tmp_name'], $dir.'/'.$filename)) throw new RuntimeException('Не удалось сохранить изображение.');
-    return 'uploads/news/'.$filename;
+    return photo_upload($file, 'news', dirname(dirname(__DIR__)).'/school-athletics-news-uploads', [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png'], 1600);
 }
 
 function news_excerpt(string $text, int $limit = 180): string
